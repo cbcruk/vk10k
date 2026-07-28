@@ -1,0 +1,19 @@
+{
+  "name": "vk10k",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm --filter @vk10k/web dev",
+    "build": "pnpm --filter @vk10k/core build && pnpm --filter @vk10k/web build",
+    "test": "pnpm --filter @vk10k/core test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

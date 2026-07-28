@@ -13,7 +13,18 @@
 
 목표는 "더 그럴듯한 숫자"가 아니라 **어디부터 못 믿는지 같이 내보내는 계산기**다.
 
+## 시작하기
+
+```bash
+pnpm install
+pnpm test     # 코어 골든/불변식 테스트
+pnpm dev      # 웹 UI (http://localhost:5173)
+pnpm build    # core 빌드 → web 번들
+```
+
 ## 계산 모델
+
+정본은 [`docs/model.md`](docs/model.md). 아래는 요약이다.
 
 기호: `G` = 경사율(소수, rise/run), `θ = atan(G)`, `H` = 목표 상승고도(m), `v` = 표시 속도(km/h), `m` = 체중(kg).
 
@@ -42,7 +53,7 @@ t     = H / VAM
 ```
 
 20% · 5 km/h 기준 61.2분(belt) vs 60.0분(horizontal).
-**기본값은 `belt`** — 실제 트레드마일 계기판이 벨트 이동거리를 표시하기 때문이다. 다만 인용되는 대부분의 표는 `horizontal` 가정이므로 UI에서 전환 가능해야 하고, 어느 쪽인지 결과에 항상 라벨링한다.
+**기본값은 `belt`** — 실제 트레드밀 계기판이 벨트 이동거리를 표시하기 때문이다. 다만 인용되는 대부분의 표는 `horizontal` 가정이므로 UI에서 전환 가능해야 하고, 어느 쪽인지 결과에 항상 라벨링한다.
 
 ### 3. 대사 추정 (ACSM)
 
@@ -84,7 +95,7 @@ P_met  = VO₂ · m / 1000 · 348.3        # 1 L O₂ ≈ 20.9 kJ, W
 | 20% | 57.2 | 47.8 | +19.5% |
 | 30% | 78.2 | 58.3 | +34.0% |
 
-VK 영역이 하필 간극이 가장 큰 쪽이다. v0.1은 하드 전환 + 경고로 가고, 블렌딩(6~8 km/h 구간 선형 보간)은 실측 대조 후에 결정한다. 근거 없는 보간은 정밀해 보이기만 하고 더 틀린다.
+VK 영역이 하필 간극이 가장 큰 쪽이다. v0.1은 하드 전환 + 경고로 가고, 블렌딩(6~8 km/h 선형 보간)은 실측 대조 후에 결정한다. 근거 없는 보간은 정밀해 보이기만 하고 더 틀린다.
 
 - `GRADE_EXTRAPOLATED` — 경사 > 15%. ACSM 검증범위 밖, 통상 10~20% 과대추정.
 - `GAIT_BOUNDARY` — 속도 6~8 km/h. 위 간극 구간.
@@ -100,14 +111,16 @@ vk10k/
 │  ├─ src/geometry.ts      # run / belt / angle / VAM / time
 │  ├─ src/metabolic.ts     # ACSM, 경고 방출
 │  ├─ src/power.ts         # P_mech / P_met / η
+│  ├─ src/ascent.ts        # computeAscent — 코어 진입점
 │  └─ test/golden.test.ts
 ├─ apps/web/               # Vite + React + TS. 프로토타입 이식
-└─ docs/model.md           # 이 문서의 수식 파트를 정본으로 분리
+│  └─ src/components/      # Controls / Profile / Metrics / Warnings / ComparisonTable
+└─ docs/model.md           # 수식 정본
 ```
 
 계산은 전부 `core`에 몰아두고 UI는 렌더링만 한다. 나중에 FIT 배치 처리를 노드에서 돌릴 때 그대로 재사용하기 위한 분리다.
 
-## 코어 API 스케치
+## 코어 API
 
 ```ts
 export interface AscentInput {
@@ -122,21 +135,40 @@ export interface AscentResult {
   angleDeg: number
   horizontalKm: number
   beltKm: number
+  beltSpeedKmh: number
+  horizontalSpeedKmh: number
   vamMh: number
   durationSec: number
+  vo2: number
   met: number
   kcal: number
   mechanicalW: number
   metabolicW: number
   efficiency: number
   gait: 'walking' | 'running'
-  warnings: Warning[]        // 빈 배열이 아니면 UI가 반드시 노출
+  speedBasis: 'belt' | 'horizontal'   // 어느 컨벤션으로 읽었는지 항상 라벨링
+  warnings: Warning[]                 // 빈 배열이 아니면 UI가 반드시 노출
 }
 
 export function computeAscent(input: AscentInput): AscentResult
 ```
 
 경고를 예외가 아니라 **결과의 일부**로 둔다. 계산은 항상 성공하고, 신뢰도만 데이터로 딸려 나온다.
+도메인 밖 입력만 예외다 — `percent()` / `kmh()` / `kg()` / `meters()` 생성자가 `DomainError`로 막는다.
+
+```ts
+import { computeAscent, kg, kmh, meters, percent } from '@vk10k/core'
+
+const r = computeAscent({
+  gradePercent: percent(20),
+  speedKmh: kmh(5),
+  speedBasis: 'belt',
+  massKg: kg(70),
+  targetGainM: meters(1000),
+})
+// r.beltKm 5.10 · r.durationSec 3671 · r.vamMh 981 · r.met 12.0
+// r.warnings → GRADE_EXTRAPOLATED, HANDRAIL_UNMODELED
+```
 
 ## 테스트
 
@@ -157,7 +189,7 @@ export function computeAscent(input: AscentInput): AscentResult
 
 ## 로드맵
 
-**v0.1 — 계산 코어 + 웹 UI**
+**v0.1 — 계산 코어 + 웹 UI** ✅
 HTML 프로토타입에서 계산부를 뜯어 `core`로 옮기고 골든 테스트를 붙인다. UI는 단면도(실제 경사각), 경사별 비교표, 배속 시뮬레이션.
 
 **v0.2 — 실측 캘리브레이션**
