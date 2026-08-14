@@ -141,11 +141,13 @@ vk10k/
 │  ├─ src/minetti.ts       # 실측 기준선 대안 모델
 │  ├─ src/power.ts         # P_mech / P_met / η
 │  ├─ src/serialize.ts     # URL 인코딩/디코딩
+│  ├─ src/session.ts       # 인터벌 세션 누적 · VK 목표 역산
 │  ├─ src/ascent.ts        # computeAscent — 코어 진입점
-│  └─ test/                # golden / minetti / serialize
-├─ apps/web/               # Vite + React + TS. 프로토타입 이식
+│  └─ test/                # golden / minetti / serialize / session
+├─ apps/web/               # Vite + React + TS. 계산기 / 세션 빌더 두 탭
 │  └─ src/components/      # Controls / Profile / Metrics / Warnings /
-│                          # ComparisonTable / ModelComparison / ShareLink
+│                          # ComparisonTable / ModelComparison / ShareLink /
+│                          # SessionBuilder / PlanEditor / GainSolver
 └─ docs/model.md           # 수식 정본
 ```
 
@@ -190,6 +192,24 @@ export function toAscentInput(params: AscentParams): AscentInput
 // URL 직렬화. 디코딩은 망가진 필드만 골라 버리고 이유를 같이 낸다.
 export function encodeAscentParams(params: AscentParams): string
 export function decodeAscentParams(query: string, fallback: AscentParams): DecodeResult
+```
+
+세션은 반대 방향으로 푼다 — 시간이 입력이고 상승고도가 결과다.
+
+```ts
+export interface SessionPlan {
+  speedBasis: 'belt' | 'horizontal'
+  massKg: number
+  blocks: SessionBlock[]           // 블록 = 스텝의 나열 × 반복
+}
+
+export function computeSession(plan: SessionPlan): SessionResult
+
+// VK 목표 역산 — 지정 블록을 몇 바퀴 돌아야 목표 고도에 닿는지.
+// 상승고도는 반복 횟수에 선형이라 해석적으로 푼다.
+export function solveRepeatsForGain(
+  plan: SessionPlan, blockIndex: number, targetGainM: number,
+): GainSolution
 ```
 
 경고를 예외가 아니라 **결과의 일부**로 둔다. 계산은 항상 성공하고, 신뢰도만 데이터로 딸려 나온다.
@@ -250,8 +270,9 @@ ACSM 외삽을 개인 실측으로 보정한다. 주의: **트레드밀 세션�
 
 기존 FIT 파싱 워크플로를 그대로 입력단으로 쓴다.
 
-**v0.3 — 세션 빌더**
+**v0.3 — 세션 빌더** ✅
 경사 인터벌 프로그램(예: 15% 5분 / 25% 3분 × N)을 짜면 총 상승고도·시간·부하를 누적 계산. VK 목표 역산.
+계산기가 "목표 고도 → 시간"이라면 세션은 "시간 → 고도"로 반대 방향이다. 플랜도 URL에 실린다.
 
 ## 참고
 

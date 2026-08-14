@@ -14,25 +14,56 @@ import type { Kmh, Meters, Percent } from './units.js'
  */
 export type SpeedBasis = 'belt' | 'horizontal'
 
-export interface Geometry {
+export interface Geometry extends Rates {
+  /** 수평거리, km. */
+  horizontalKm: number
+  /** 사면(벨트) 거리, km. */
+  beltKm: number
+  /** 소요 시간, s. */
+  durationSec: number
+}
+
+/**
+ * 목표 고도와 무관한 부분 — 경사각과 세 방향의 속도.
+ *
+ * 계산기는 "목표 고도 → 시간"으로 풀지만 세션 빌더는 "구간 시간 → 상승고도"로
+ * 반대 방향으로 푼다. 양쪽이 공유하는 게 정확히 이 비율들이다.
+ */
+export interface Rates {
   /** 경사율, 소수(rise/run). */
   grade: number
   /** 경사각, rad. */
   angleRad: number
   /** 경사각, deg. */
   angleDeg: number
-  /** 수평거리, km. */
-  horizontalKm: number
-  /** 사면(벨트) 거리, km. */
-  beltKm: number
   /** 벨트 속도, km/h. */
   beltSpeedKmh: number
   /** 수평 속도, km/h. */
   horizontalSpeedKmh: number
   /** 수직 상승 속도, m/h. */
   vamMh: number
-  /** 소요 시간, s. */
-  durationSec: number
+}
+
+export function computeRates(
+  gradePercent: Percent,
+  speedKmh: Kmh,
+  basis: SpeedBasis,
+): Rates {
+  const grade = gradeToRatio(gradePercent)
+  const angleRad = Math.atan(grade)
+
+  // vVert = v·sinθ (belt) vs v·G (horizontal). vHoriz·G 하나로 통합된다.
+  const beltSpeedKmh = basis === 'belt' ? speedKmh : speedKmh / Math.cos(angleRad)
+  const horizontalSpeedKmh = basis === 'belt' ? speedKmh * Math.cos(angleRad) : speedKmh
+
+  return {
+    grade,
+    angleRad,
+    angleDeg: (angleRad * 180) / Math.PI,
+    beltSpeedKmh,
+    horizontalSpeedKmh,
+    vamMh: horizontalSpeedKmh * grade * 1000,
+  }
 }
 
 export function gradeToRatio(gradePercent: Percent): number {
@@ -55,25 +86,13 @@ export function computeGeometry(
   basis: SpeedBasis,
   targetGainM: Meters,
 ): Geometry {
-  const grade = gradeToRatio(gradePercent)
-  const angleRad = Math.atan(grade)
-
-  // vVert = v·sinθ (belt) vs v·G (horizontal). 거리는 어느 쪽이든 같다.
-  const beltSpeedKmh = basis === 'belt' ? speedKmh : speedKmh / Math.cos(angleRad)
-  const horizontalSpeedKmh = basis === 'belt' ? speedKmh * Math.cos(angleRad) : speedKmh
-  const vamMh = horizontalSpeedKmh * grade * 1000
-
-  const horizontalKm = runKm(targetGainM, grade)
+  const rates = computeRates(gradePercent, speedKmh, basis)
+  const horizontalKm = runKm(targetGainM, rates.grade)
 
   return {
-    grade,
-    angleRad,
-    angleDeg: (angleRad * 180) / Math.PI,
+    ...rates,
     horizontalKm,
-    beltKm: horizontalKm * beltRatio(grade),
-    beltSpeedKmh,
-    horizontalSpeedKmh,
-    vamMh,
-    durationSec: (targetGainM / vamMh) * 3600,
+    beltKm: horizontalKm * beltRatio(rates.grade),
+    durationSec: (targetGainM / rates.vamMh) * 3600,
   }
 }

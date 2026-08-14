@@ -1,4 +1,9 @@
-import { computeAscent, toAscentInput, type AscentParams } from '@vk10k/core'
+import {
+  computeAscent,
+  toAscentInput,
+  type AscentParams,
+  type SessionPlan,
+} from '@vk10k/core'
 import { useMemo } from 'react'
 import { ComparisonTable } from './components/ComparisonTable.js'
 import { Controls } from './components/Controls.js'
@@ -7,14 +12,15 @@ import { ModelComparison } from './components/ModelComparison.js'
 import { Notes } from './components/Notes.js'
 import { Profile } from './components/Profile.js'
 import { RejectedParams } from './components/RejectedParams.js'
+import { SessionBuilder } from './components/SessionBuilder.js'
 import { ShareLink } from './components/ShareLink.js'
 import { Transport } from './components/Transport.js'
 import { Warnings } from './components/Warnings.js'
 import { BASIS_LABEL, duration, num } from './format.js'
 import { useClimb } from './hooks/useClimb.js'
-import { useShareableParams } from './hooks/useShareableParams.js'
+import { useShareableState } from './hooks/useShareableState.js'
 
-const DEFAULTS: AscentParams = {
+const DEFAULT_PARAMS: AscentParams = {
   gradePercent: 20,
   speedKmh: 5,
   speedBasis: 'belt',
@@ -22,29 +28,36 @@ const DEFAULTS: AscentParams = {
   targetGainM: 1000,
 }
 
-export function App() {
-  const { params, patch, rejected } = useShareableParams(DEFAULTS)
+/** 15% 5분 / 25% 3분 × 6 — README가 예로 든 세션. */
+const DEFAULT_PLAN: SessionPlan = {
+  speedBasis: 'belt',
+  massKg: 70,
+  blocks: [
+    { repeat: 1, steps: [{ gradePercent: 3, speedKmh: 4.5, durationSec: 600 }] },
+    {
+      repeat: 6,
+      steps: [
+        { gradePercent: 15, speedKmh: 5, durationSec: 300 },
+        { gradePercent: 25, speedKmh: 5, durationSec: 180 },
+      ],
+    },
+  ],
+}
 
+function Calculator({
+  params,
+  onChange,
+}: {
+  params: AscentParams
+  onChange: (patch: Partial<AscentParams>) => void
+}) {
   const result = useMemo(() => computeAscent(toAscentInput(params)), [params])
-
   const { elapsedSec, running, rate, setRate, toggle, reset } = useClimb(result.durationSec)
   const progress = Math.min(1, (elapsedSec * result.vamMh) / 3600 / params.targetGainM)
 
   return (
-    <div className="vk">
-      <div className="eyebrow">Vertical Kilometer · Treadmill Simulator</div>
-      <h1>
-        VK<em>10K</em>
-      </h1>
-      <p className="lede">
-        경사와 속도를 정하면 목표 고도를 쌓는 데 걸리는 시간, 실제로 밟아야 하는 거리, 그리고 대사
-        부하를 계산합니다. 추정이 어디서부터 못 믿을 값이 되는지도 같이 표시합니다.
-      </p>
-      <div className="rule" />
-
-      <RejectedParams rejected={rejected} />
-
-      <Controls value={params} onChange={patch} />
+    <>
+      <Controls value={params} onChange={onChange} />
 
       <div className="stage">
         <Profile result={result} targetGainM={params.targetGainM} progress={progress} />
@@ -86,6 +99,83 @@ export function App() {
 
       <ComparisonTable params={params} />
       <ModelComparison result={result} />
+    </>
+  )
+}
+
+export function App() {
+  const { tab, setTab, params, patchParams, plan, setPlan, rejected } = useShareableState({
+    params: DEFAULT_PARAMS,
+    plan: DEFAULT_PLAN,
+  })
+
+  return (
+    <div className="vk">
+      <div className="eyebrow">Vertical Kilometer · Treadmill Simulator</div>
+      <h1>
+        VK<em>10K</em>
+      </h1>
+      <p className="lede">
+        경사와 속도를 정하면 목표 고도를 쌓는 데 걸리는 시간, 실제로 밟아야 하는 거리, 그리고 대사
+        부하를 계산합니다. 추정이 어디서부터 못 믿을 값이 되는지도 같이 표시합니다.
+      </p>
+
+      <div className="seg tabs" role="tablist" aria-label="화면">
+        <button type="button" role="tab" aria-selected={tab === 'calculator'} aria-pressed={tab === 'calculator'} onClick={() => setTab('calculator')}>
+          계산기
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'session'} aria-pressed={tab === 'session'} onClick={() => setTab('session')}>
+          세션 빌더
+        </button>
+      </div>
+
+      <div className="rule" />
+
+      <RejectedParams rejected={rejected} />
+
+      {tab === 'calculator' ? (
+        <Calculator params={params} onChange={patchParams} />
+      ) : (
+        <>
+          <div className="sessionhead">
+            <label className="field">
+              <span>체중 kg</span>
+              <input
+                type="number"
+                value={plan.massKg}
+                min={20}
+                max={250}
+                step={1}
+                onChange={(e) => {
+                  const massKg = Number(e.target.value)
+                  if (Number.isFinite(massKg) && massKg >= 20 && massKg <= 250) {
+                    setPlan({ ...plan, massKg })
+                  }
+                }}
+              />
+            </label>
+            <div className="seg" role="group" aria-label="속도 해석 기준">
+              <button
+                type="button"
+                aria-pressed={plan.speedBasis === 'belt'}
+                onClick={() => setPlan({ ...plan, speedBasis: 'belt' })}
+              >
+                벨트 거리
+              </button>
+              <button
+                type="button"
+                aria-pressed={plan.speedBasis === 'horizontal'}
+                onClick={() => setPlan({ ...plan, speedBasis: 'horizontal' })}
+              >
+                수평 거리
+              </button>
+            </div>
+            <ShareLink />
+          </div>
+
+          <SessionBuilder plan={plan} onChange={setPlan} />
+        </>
+      )}
 
       <Notes />
     </div>
