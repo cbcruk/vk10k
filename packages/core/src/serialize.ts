@@ -10,7 +10,8 @@
 
 import type { AscentParams } from './ascent.js'
 import type { SpeedBasis } from './geometry.js'
-import { DomainError, kg, kmh, meters, percent } from './units.js'
+import { STEP_SEC_MAX, STEP_SEC_MIN, type SessionBlock, type SessionPlan } from './session.js'
+import { DomainError, GRADE_MAX, GRADE_MIN, kg, kmh, meters, percent } from './units.js'
 
 export interface RejectedParam {
   /** 쿼리스트링 키 (`g` / `v` / `b` / `m` / `h`). */
@@ -70,6 +71,23 @@ function parseQuery(query: string): Map<string, string> {
   return out
 }
 
+function readBasis(
+  q: Map<string, string>,
+  fallback: SpeedBasis,
+  rejected: RejectedParam[],
+): SpeedBasis {
+  const raw = q.get(PARAM_KEYS.speedBasis)
+  if (raw === undefined || raw === '') return fallback
+
+  // 손으로 고친 링크를 위해 풀네임도 받는다.
+  const decoded =
+    BASIS_FROM_CODE[raw] ?? (raw === 'belt' || raw === 'horizontal' ? (raw as SpeedBasis) : undefined)
+  if (decoded) return decoded
+
+  rejected.push({ key: PARAM_KEYS.speedBasis, value: raw, reason: "'b' 또는 'h'만 허용" })
+  return fallback
+}
+
 function readNumber(
   q: Map<string, string>,
   key: string,
@@ -107,17 +125,7 @@ function readNumber(
 export function decodeAscentParams(query: string, fallback: AscentParams): DecodeResult {
   const q = parseQuery(query)
   const rejected: RejectedParam[] = []
-
-  const rawBasis = q.get(PARAM_KEYS.speedBasis)
-  let speedBasis = fallback.speedBasis
-  if (rawBasis !== undefined && rawBasis !== '') {
-    const decoded = BASIS_FROM_CODE[rawBasis] ?? (rawBasis === 'belt' || rawBasis === 'horizontal' ? rawBasis : undefined)
-    if (decoded) {
-      speedBasis = decoded
-    } else {
-      rejected.push({ key: PARAM_KEYS.speedBasis, value: rawBasis, reason: "'b' 또는 'h'만 허용" })
-    }
-  }
+  const speedBasis = readBasis(q, fallback.speedBasis, rejected)
 
   return {
     params: {
@@ -128,5 +136,103 @@ export function decodeAscentParams(query: string, fallback: AscentParams): Decod
       targetGainM: readNumber(q, PARAM_KEYS.targetGainM, meters, fallback.targetGainM, rejected),
     },
     rejected,
+  }
+}
+
+/* ─── 세션 플랜 ─────────────────────────────────────────────────────────── */
+
+/** 플랜 본문이 실리는 키. 기준(`b`)과 체중(`m`)은 계산기와 같은 키를 쓴다. */
+export const PLAN_KEY = 'p'
+
+/**
+ * `반복*경사@속도@초;경사@속도@초|반복*...`
+ *
+ * 예: `1*3@4.5@600|6*15@5@300;25@5@180`
+ * = 워밍업 3% 4.5km/h 10분, 그다음 6×(15% 5km/h 5분 + 25% 5km/h 3분).
+ *
+ * base64 JSON이 더 짧고 쉽지만, 링크를 눈으로 읽고 손으로 고칠 수 있는 게
+ * 이 프로젝트에서는 더 값지다. 세션은 남에게 보내는 물건이다.
+ */
+export function encodeSessionPlan(plan: SessionPlan): string {
+  const body = plan.blocks
+    .map(
+      (block) =>
+        `${block.repeat}*${block.steps
+          .map((s) => `${trim(s.gradePercent)}@${trim(s.speedKmh)}@${trim(s.durationSec)}`)
+          .join(';')}`,
+    )
+    .join('|')
+
+  return [
+    `${PARAM_KEYS.speedBasis}=${BASIS_CODE[plan.speedBasis]}`,
+    `${PARAM_KEYS.massKg}=${trim(plan.massKg)}`,
+    `${PLAN_KEY}=${body}`,
+  ].join('&')
+}
+
+export interface DecodedSessionPlan {
+  plan: SessionPlan
+  rejected: RejectedParam[]
+}
+
+function parseBlock(raw: string): SessionBlock {
+  const star = raw.indexOf('*')
+  if (star === -1) throw new Error(`블록에 반복 횟수가 없음: ${raw}`)
+
+  const repeat = Number(raw.slice(0, star))
+  if (!Number.isInteger(repeat) || repeat < 1 || repeat > 999) {
+    throw new Error(`반복 횟수가 1~999 정수가 아님: ${raw.slice(0, star)}`)
+  }
+
+  const steps = raw
+    .slice(star + 1)
+    .split(';')
+    .filter(Boolean)
+    .map((chunk) => {
+      const [g, v, sec, ...rest] = chunk.split('@').map(Number)
+      if (rest.length > 0 || g === undefined || v === undefined || sec === undefined) {
+        throw new Error(`스텝 형식은 경사@속도@초: ${chunk}`)
+      }
+      if (!Number.isFinite(g) || g < GRADE_MIN || g > GRADE_MAX) {
+        throw new Error(`경사가 ${GRADE_MIN}~${GRADE_MAX} 밖: ${chunk}`)
+      }
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`속도가 0 이하: ${chunk}`)
+      if (!Number.isFinite(sec) || sec < STEP_SEC_MIN || sec > STEP_SEC_MAX) {
+        throw new Error(`구간 길이가 ${STEP_SEC_MIN}~${STEP_SEC_MAX}초 밖: ${chunk}`)
+      }
+      return { gradePercent: g, speedKmh: v, durationSec: sec }
+    })
+
+  if (steps.length === 0) throw new Error(`블록에 스텝이 없음: ${raw}`)
+  return { repeat, steps }
+}
+
+/**
+ * 플랜은 **통째로** 받거나 통째로 버린다. 스칼라 하나가 망가진 것과 달리,
+ * 반쯤 파싱된 운동 프로그램은 기본값보다 나쁘다 — 사용자가 짜지 않은 세션을
+ * 자기 세션이라고 믿게 된다.
+ */
+export function decodeSessionPlan(query: string, fallback: SessionPlan): DecodedSessionPlan {
+  const q = parseQuery(query)
+  const rejected: RejectedParam[] = []
+  const speedBasis = readBasis(q, fallback.speedBasis, rejected)
+  const massKg = readNumber(q, PARAM_KEYS.massKg, kg, fallback.massKg, rejected)
+
+  const raw = q.get(PLAN_KEY)
+  if (raw === undefined || raw === '') {
+    return { plan: { ...fallback, speedBasis, massKg }, rejected }
+  }
+
+  try {
+    const blocks = raw.split('|').filter(Boolean).map(parseBlock)
+    if (blocks.length === 0) throw new Error('블록이 없음')
+    return { plan: { speedBasis, massKg, blocks }, rejected }
+  } catch (error) {
+    rejected.push({
+      key: PLAN_KEY,
+      value: raw,
+      reason: error instanceof Error ? error.message : '플랜 형식 오류',
+    })
+    return { plan: { ...fallback, speedBasis, massKg }, rejected }
   }
 }

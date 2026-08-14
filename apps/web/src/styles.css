@@ -423,3 +423,115 @@ body {
     transition: none !important;
   }
 }
+
+/* ─── 세션 빌더 ─────────────────────────────────────────────────────────── */
+
+.tabs {
+  margin: 0 0 18px;
+}
+
+.sessionhead {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.sessionhead .seg {
+  margin-top: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.field input,
+.field select {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 6px 8px;
+  width: 8ch;
+}
+.field select {
+  width: auto;
+}
+.field input:focus-visible,
+.field select:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.block {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--teal);
+  padding: 12px 14px;
+  width: 100%;
+  background: rgba(14, 107, 117, 0.03);
+}
+.blockhead {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+.blockhead .eyebrow {
+  margin-right: auto;
+  padding-bottom: 7px;
+}
+.steprow {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+}
+
+button.mini {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink2);
+  cursor: pointer;
+}
+button.mini:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+button.mini:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.solver {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.solver .chips {
+  margin-top: 0;
+}

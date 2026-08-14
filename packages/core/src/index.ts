@@ -8,9 +8,11 @@ export {
 export {
   beltRatio,
   computeGeometry,
+  computeRates,
   gradeToRatio,
   runKm,
   type Geometry,
+  type Rates,
   type SpeedBasis,
 } from './geometry.js'
 export {
@@ -35,11 +37,29 @@ export {
 export { computePower, EFFICIENCY_PLAUSIBLE, type Power } from './power.js'
 export {
   decodeAscentParams,
+  decodeSessionPlan,
   encodeAscentParams,
+  encodeSessionPlan,
   PARAM_KEYS,
+  PLAN_KEY,
+  type DecodedSessionPlan,
   type DecodeResult,
   type RejectedParam,
 } from './serialize.js'
+export {
+  computeSession,
+  solveRepeatsForGain,
+  STEP_SEC_MAX,
+  STEP_SEC_MIN,
+  type GainSolution,
+  type SessionBlock,
+  type SessionPlan,
+  type SessionResult,
+  type SessionStep,
+  type SessionStepResult,
+  type SessionTotals,
+  type SessionWarning,
+} from './session.js'
 export {
   ACSM_GRADE_LIMIT,
   DomainError,
