@@ -18,9 +18,23 @@
 ```bash
 pnpm install
 pnpm test     # 코어 골든/불변식 테스트
-pnpm dev      # 웹 UI (http://localhost:5173)
+pnpm dev      # 웹 UI (http://localhost:5173/vk10k/)
 pnpm build    # core 빌드 → web 번들
 ```
+
+## 배포
+
+`main`에 푸시되면 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)이
+테스트 → 타입체크 → 빌드를 돌리고 `apps/web/dist`를 GitHub Pages에 올린다.
+골든 테스트가 배포 게이트다 — 계산이 깨진 채로는 올라가지 않는다.
+
+Pages는 `https://<user>.github.io/vk10k/` 하위에 얹히므로 Vite `base`가 `/vk10k/`다.
+dev·preview도 같은 base를 쓴다(`vite preview`의 command는 `serve`라 빌드에만 걸면
+preview가 배포와 다른 경로를 서빙한다). 커스텀 도메인으로 옮기면
+`apps/web/vite.config.ts`의 `BASE_PATH` 한 줄만 바꾸면 된다.
+
+리포지토리 설정에서 **Settings → Pages → Source를 "GitHub Actions"** 로 한 번 바꿔줘야
+워크플로가 실제로 배포할 수 있다.
 
 ## 계산 모델
 
