@@ -1,18 +1,10 @@
-import type { SpeedBasis } from '@vk10k/core'
+import type { AscentParams } from '@vk10k/core'
 import { GRADE_MAX, GRADE_MIN } from '@vk10k/core'
 import { num } from '../format.js'
 
-export interface ControlState {
-  grade: number
-  speed: number
-  basis: SpeedBasis
-  mass: number
-  target: number
-}
-
 interface Props {
-  value: ControlState
-  onChange: (patch: Partial<ControlState>) => void
+  value: AscentParams
+  onChange: (patch: Partial<AscentParams>) => void
 }
 
 const GRADE_PRESETS = [
@@ -57,7 +49,7 @@ export function Controls({ value, onChange }: Props) {
     <div className="ctrls">
       <div className="ctrl">
         <label htmlFor="g">
-          경사 <output id="gv">{num(value.grade, 1)} %</output>
+          경사 <output id="gv">{num(value.gradePercent, 1)} %</output>
         </label>
         <input
           type="range"
@@ -65,19 +57,19 @@ export function Controls({ value, onChange }: Props) {
           min={GRADE_MIN}
           max={GRADE_MAX}
           step={0.5}
-          value={value.grade}
-          onChange={(e) => onChange({ grade: Number(e.target.value) })}
+          value={value.gradePercent}
+          onChange={(e) => onChange({ gradePercent: Number(e.target.value) })}
         />
         <Chips
           presets={GRADE_PRESETS}
-          current={value.grade}
-          onPick={(grade) => onChange({ grade })}
+          current={value.gradePercent}
+          onPick={(gradePercent) => onChange({ gradePercent })}
         />
       </div>
 
       <div className="ctrl">
         <label htmlFor="s">
-          속도 <output id="sv">{num(value.speed, 1)} km/h</output>
+          속도 <output id="sv">{num(value.speedKmh, 1)} km/h</output>
         </label>
         <input
           type="range"
@@ -85,21 +77,21 @@ export function Controls({ value, onChange }: Props) {
           min={1}
           max={16}
           step={0.1}
-          value={value.speed}
-          onChange={(e) => onChange({ speed: Number(e.target.value) })}
+          value={value.speedKmh}
+          onChange={(e) => onChange({ speedKmh: Number(e.target.value) })}
         />
         <div className="seg" role="group" aria-label="속도 해석 기준">
           <button
             type="button"
-            aria-pressed={value.basis === 'belt'}
-            onClick={() => onChange({ basis: 'belt' })}
+            aria-pressed={value.speedBasis === 'belt'}
+            onClick={() => onChange({ speedBasis: 'belt' })}
           >
             벨트 거리
           </button>
           <button
             type="button"
-            aria-pressed={value.basis === 'horizontal'}
-            onClick={() => onChange({ basis: 'horizontal' })}
+            aria-pressed={value.speedBasis === 'horizontal'}
+            onClick={() => onChange({ speedBasis: 'horizontal' })}
           >
             수평 거리
           </button>
@@ -108,7 +100,7 @@ export function Controls({ value, onChange }: Props) {
 
       <div className="ctrl">
         <label htmlFor="w">
-          체중 <output id="wv">{value.mass} kg</output>
+          체중 <output id="wv">{value.massKg} kg</output>
         </label>
         <input
           type="range"
@@ -116,14 +108,14 @@ export function Controls({ value, onChange }: Props) {
           min={40}
           max={120}
           step={1}
-          value={value.mass}
-          onChange={(e) => onChange({ mass: Number(e.target.value) })}
+          value={value.massKg}
+          onChange={(e) => onChange({ massKg: Number(e.target.value) })}
         />
       </div>
 
       <div className="ctrl">
         <label htmlFor="t">
-          목표 상승 <output id="tv">{num(value.target, 0)} m</output>
+          목표 상승 <output id="tv">{num(value.targetGainM, 0)} m</output>
         </label>
         <input
           type="range"
@@ -131,13 +123,13 @@ export function Controls({ value, onChange }: Props) {
           min={100}
           max={10000}
           step={100}
-          value={value.target}
-          onChange={(e) => onChange({ target: Number(e.target.value) })}
+          value={value.targetGainM}
+          onChange={(e) => onChange({ targetGainM: Number(e.target.value) })}
         />
         <Chips
           presets={TARGET_PRESETS}
-          current={value.target}
-          onPick={(target) => onChange({ target })}
+          current={value.targetGainM}
+          onPick={(targetGainM) => onChange({ targetGainM })}
         />
       </div>
     </div>

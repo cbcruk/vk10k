@@ -1,39 +1,26 @@
-import type { SpeedBasis } from '@vk10k/core'
-import { ACSM_GRADE_LIMIT, computeAscent, kg, kmh, meters, percent } from '@vk10k/core'
+import type { AscentParams } from '@vk10k/core'
+import { ACSM_GRADE_LIMIT, computeAscent, toAscentInput } from '@vk10k/core'
 import { BASIS_LABEL, duration, num } from '../format.js'
 
 const GRADES = [10, 15, 20, 25, 30, 35, 40]
 
-interface Props {
-  grade: number
-  speed: number
-  basis: SpeedBasis
-  mass: number
-  target: number
-}
-
-export function ComparisonTable({ grade, speed, basis, mass, target }: Props) {
+export function ComparisonTable({ params }: { params: AscentParams }) {
   const nearest = GRADES.reduce((a, b) =>
-    Math.abs(b - grade) < Math.abs(a - grade) ? b : a,
+    Math.abs(b - params.gradePercent) < Math.abs(a - params.gradePercent) ? b : a,
   )
 
-  const rows = GRADES.map((g) => {
-    const r = computeAscent({
-      gradePercent: percent(g),
-      speedKmh: kmh(speed),
-      speedBasis: basis,
-      massKg: kg(mass),
-      targetGainM: meters(target),
-    })
-    return { g, r }
-  })
+  const rows = GRADES.map((gradePercent) => ({
+    gradePercent,
+    result: computeAscent(toAscentInput({ ...params, gradePercent })),
+  }))
 
   return (
     <section className="section">
       <h2>
         경사별 비교{' '}
         <span className="cap">
-          — {num(speed, 1)} km/h ({BASIS_LABEL[basis]}) 로 {num(target, 0)} m 상승
+          — {num(params.speedKmh, 1)} km/h ({BASIS_LABEL[params.speedBasis]}) 로{' '}
+          {num(params.targetGainM, 0)} m 상승
         </span>
       </h2>
       <table>
@@ -46,27 +33,30 @@ export function ComparisonTable({ grade, speed, basis, mass, target }: Props) {
             <th>소요시간</th>
             <th>VAM</th>
             <th>MET</th>
+            <th>Minetti</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ g, r }) => (
-            <tr key={g} className={g === nearest ? 'here' : undefined}>
-              <td>{g} %</td>
-              <td>{num(r.horizontalKm, 2)} km</td>
-              <td>{num(r.beltKm, 2)} km</td>
-              <td>+{num((r.beltKm / r.horizontalKm - 1) * 100, 1)} %</td>
-              <td>{duration(r.durationSec)}</td>
-              <td>{num(r.vamMh, 0)}</td>
-              <td className={g > ACSM_GRADE_LIMIT ? 'extrap' : undefined}>
-                {num(r.met, 1)}
-                {g > ACSM_GRADE_LIMIT ? '*' : ''}
+          {rows.map(({ gradePercent, result }) => (
+            <tr key={gradePercent} className={gradePercent === nearest ? 'here' : undefined}>
+              <td>{gradePercent} %</td>
+              <td>{num(result.horizontalKm, 2)} km</td>
+              <td>{num(result.beltKm, 2)} km</td>
+              <td>+{num((result.beltKm / result.horizontalKm - 1) * 100, 1)} %</td>
+              <td>{duration(result.durationSec)}</td>
+              <td>{num(result.vamMh, 0)}</td>
+              <td className={gradePercent > ACSM_GRADE_LIMIT ? 'extrap' : undefined}>
+                {num(result.met, 1)}
+                {gradePercent > ACSM_GRADE_LIMIT ? '*' : ''}
               </td>
+              <td>{num(result.minetti.met, 1)}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="notes" style={{ marginTop: 10 }}>
-        * 경사 {ACSM_GRADE_LIMIT}% 초과 — ACSM 검증범위 밖의 외삽값.
+        * 경사 {ACSM_GRADE_LIMIT}% 초과 — ACSM 검증범위 밖의 외삽값. Minetti 열은 같은 입력을 실측
+        기준선으로 다시 푼 MET입니다.
       </p>
     </section>
   )

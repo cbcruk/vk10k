@@ -11,6 +11,7 @@ interface Props {
   onToggle: () => void
   onReset: () => void
   onRate: (rate: number) => void
+  share?: React.ReactNode
 }
 
 export function Transport({
@@ -22,6 +23,7 @@ export function Transport({
   onToggle,
   onReset,
   onRate,
+  share,
 }: Props) {
   return (
     <div className="transport">
@@ -31,6 +33,7 @@ export function Transport({
       <button type="button" className="ghost" onClick={onReset}>
         처음으로
       </button>
+      {share}
       <span className="eyebrow" aria-live="off">
         {num(gainM, 0)} m · {duration(elapsedSec)} · {num(kcal, 0)} kcal
       </span>

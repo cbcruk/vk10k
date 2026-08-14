@@ -111,7 +111,21 @@ P_met  = VO₂ · m / 1000 · 348.3        # 1 L O₂ ≈ 20.9 kJ, W
 
 VK 영역이 하필 간극이 가장 큰 쪽이다. v0.1은 하드 전환 + 경고로 가고, 블렌딩(6~8 km/h 선형 보간)은 실측 대조 후에 결정한다. 근거 없는 보간은 정밀해 보이기만 하고 더 틀린다.
 
-- `GRADE_EXTRAPOLATED` — 경사 > 15%. ACSM 검증범위 밖, 통상 10~20% 과대추정.
+**과대추정은 경사에 비례하지 않고, 주행식에서는 부호가 뒤집힌다.** Minetti 실측 기준선과
+대조한 결과다(MET 차이, 양수 = ACSM이 크게 나옴).
+
+| 경사 | 5 km/h (보행식) | 8 km/h (주행식) |
+|---:|---:|---:|
+| 15% | +19.3% | −5.2% |
+| 20% | **+19.8%** | −11.2% |
+| 30% | +18.2% | −21.0% |
+| 45% | +7.4% | **−34.0%** |
+
+"가파를수록 더 틀린다"가 아니다 — 보행식 오차는 20% 부근에서 최대고 45%로 갈수록 좁아진다.
+그리고 주행식의 경사 계수는 보행식의 절반(0.9 vs 1.8)이라 7 km/h 위에서는 ACSM이 오히려
+**과소**추정한다. 자세한 건 [`docs/model.md`](docs/model.md#7-대안-모델--minetti-et-al-2002--srcminettits).
+
+- `GRADE_EXTRAPOLATED` — 경사 > 15%. ACSM 검증범위 밖, 보행식 기준 통상 10~20% 과대추정.
 - `GAIT_BOUNDARY` — 속도 6~8 km/h. 위 간극 구간.
 - `HANDRAIL_UNMODELED` — 손잡이 파지 시 실측 VO₂가 유의하게 떨어지지만 식에 반영 안 됨. 고정 경고.
 - 경사 0은 `VAM = 0` → `t = ∞`. 도메인에서 배제(min 1%)하고 타입으로 막는다.
@@ -124,11 +138,14 @@ vk10k/
 │  ├─ src/units.ts         # 브랜디드 타입 (Percent, Kmh, Meters, Kg)
 │  ├─ src/geometry.ts      # run / belt / angle / VAM / time
 │  ├─ src/metabolic.ts     # ACSM, 경고 방출
+│  ├─ src/minetti.ts       # 실측 기준선 대안 모델
 │  ├─ src/power.ts         # P_mech / P_met / η
+│  ├─ src/serialize.ts     # URL 인코딩/디코딩
 │  ├─ src/ascent.ts        # computeAscent — 코어 진입점
-│  └─ test/golden.test.ts
+│  └─ test/                # golden / minetti / serialize
 ├─ apps/web/               # Vite + React + TS. 프로토타입 이식
-│  └─ src/components/      # Controls / Profile / Metrics / Warnings / ComparisonTable
+│  └─ src/components/      # Controls / Profile / Metrics / Warnings /
+│                          # ComparisonTable / ModelComparison / ShareLink
 └─ docs/model.md           # 수식 정본
 ```
 
@@ -161,10 +178,18 @@ export interface AscentResult {
   efficiency: number
   gait: 'walking' | 'running'
   speedBasis: 'belt' | 'horizontal'   // 어느 컨벤션으로 읽었는지 항상 라벨링
+  minetti: MinettiEstimate            // 같은 입력을 실측 기준선으로 다시 푼 값
   warnings: Warning[]                 // 빈 배열이 아니면 UI가 반드시 노출
 }
 
 export function computeAscent(input: AscentInput): AscentResult
+
+// 날 숫자 ↔ 브랜디드 타입. UI 상태·URL 쿼리·FIT 파싱 결과가 사는 곳.
+export function toAscentInput(params: AscentParams): AscentInput
+
+// URL 직렬화. 디코딩은 망가진 필드만 골라 버리고 이유를 같이 낸다.
+export function encodeAscentParams(params: AscentParams): string
+export function decodeAscentParams(query: string, fallback: AscentParams): DecodeResult
 ```
 
 경고를 예외가 아니라 **결과의 일부**로 둔다. 계산은 항상 성공하고, 신뢰도만 데이터로 딸려 나온다.
@@ -200,11 +225,20 @@ const r = computeAscent({
 - `belt / run === √(1+G²)` 오차 1e-12 이내
 - `G = 1/9`에서 보행식 == 주행식
 - `durationSec`은 경사에 대해 단조감소
+- Minetti 평지 절편 `Cw(0) = 2.5`, `Cr(0) = 3.6` J/(kg·m)
+- URL 인코딩 → 디코딩 왕복이 입력을 보존하고, 망가진 필드만 골라 버린다
 
 ## 로드맵
 
 **v0.1 — 계산 코어 + 웹 UI** ✅
 HTML 프로토타입에서 계산부를 뜯어 `core`로 옮기고 골든 테스트를 붙인다. UI는 단면도(실제 경사각), 경사별 비교표, 배속 시뮬레이션.
+
+**v0.4 — 상태 공유** ✅
+입력을 URL로 직렬화. 계산기 링크 하나로 재현 가능하게. 도메인 밖 값은 조용히 클램프하지 않고
+그 항목만 폴백으로 되돌린 뒤 무엇을 버렸는지 UI에 알린다.
+
+**대안 모델 대조** ✅
+Minetti et al. (2002)를 코어에 넣고 ACSM 추정과 나란히 내보낸다. v0.2 캘리브레이션의 대조군.
 
 **v0.2 — 실측 캘리브레이션**
 ACSM 외삽을 개인 실측으로 보정한다. 주의: **트레드밀 세션의 FIT에는 상승고도가 안 남는다.** 실내 기압계는 변화가 없고 GPS도 없다. 따라서 검증은 실외 업힐 세션(기압 고도계 유효)으로 하고, 거기서 얻은 보정계수 `k`를 트레드밀 추정에 이식한다.
@@ -219,11 +253,8 @@ ACSM 외삽을 개인 실측으로 보정한다. 주의: **트레드밀 세션�
 **v0.3 — 세션 빌더**
 경사 인터벌 프로그램(예: 15% 5분 / 25% 3분 × N)을 짜면 총 상승고도·시간·부하를 누적 계산. VK 목표 역산.
 
-**v0.4 — 상태 공유**
-입력을 URL로 직렬화. 계산기 링크 하나로 재현 가능하게.
-
 ## 참고
 
 - ACSM's Guidelines for Exercise Testing and Prescription — 대사 방정식과 그 유효범위
 - ISF Vertical Kilometer 규정 — 5 km 이내 1,000 m 상승(평균 20% 이상)
-- Minetti et al. (2002), *Energy cost of walking and running at extreme uphill and downhill slopes* — ACSM 밖 경사대의 실측 기준선. v0.2에서 대안 모델로 검토
+- Minetti et al. (2002), *Energy cost of walking and running at extreme uphill and downhill slopes* — ACSM 밖 경사대의 실측 기준선. `packages/core/src/minetti.ts`에 구현, 결과에 항상 동봉

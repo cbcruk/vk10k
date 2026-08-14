@@ -1,6 +1,8 @@
 export {
   computeAscent,
+  toAscentInput,
   type AscentInput,
+  type AscentParams,
   type AscentResult,
 } from './ascent.js'
 export {
@@ -23,7 +25,21 @@ export {
   type Warning,
   type WarningCode,
 } from './metabolic.js'
+export {
+  computeMinetti,
+  MINETTI_GRADE_LIMIT,
+  runningCost,
+  walkingCost,
+  type MinettiEstimate,
+} from './minetti.js'
 export { computePower, EFFICIENCY_PLAUSIBLE, type Power } from './power.js'
+export {
+  decodeAscentParams,
+  encodeAscentParams,
+  PARAM_KEYS,
+  type DecodeResult,
+  type RejectedParam,
+} from './serialize.js'
 export {
   ACSM_GRADE_LIMIT,
   DomainError,

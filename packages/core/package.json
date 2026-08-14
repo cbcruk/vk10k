@@ -6,10 +6,10 @@
   "description": "트레드밀 경사 수직상승 계산 코어. 의존성 0, 순수 TS.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "//exports": "워크스페이스 내부 소비는 소스를 직접 본다. dist를 가리키면 빌드를 잊은 순간 타입체크가 낡은 산출물을 보고 통과하거나 실패한다. dist는 나중에 노드/배포용으로 emit할 때만 쓴다.",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./src/index.ts",
       "default": "./src/index.ts"
     }
   },

@@ -1,40 +1,34 @@
-import { computeAscent, kg, kmh, meters, percent } from '@vk10k/core'
-import { useMemo, useState } from 'react'
+import { computeAscent, toAscentInput, type AscentParams } from '@vk10k/core'
+import { useMemo } from 'react'
 import { ComparisonTable } from './components/ComparisonTable.js'
-import { Controls, type ControlState } from './components/Controls.js'
+import { Controls } from './components/Controls.js'
 import { Metrics } from './components/Metrics.js'
+import { ModelComparison } from './components/ModelComparison.js'
 import { Notes } from './components/Notes.js'
 import { Profile } from './components/Profile.js'
+import { RejectedParams } from './components/RejectedParams.js'
+import { ShareLink } from './components/ShareLink.js'
 import { Transport } from './components/Transport.js'
 import { Warnings } from './components/Warnings.js'
 import { BASIS_LABEL, duration, num } from './format.js'
 import { useClimb } from './hooks/useClimb.js'
+import { useShareableParams } from './hooks/useShareableParams.js'
 
-const INITIAL: ControlState = {
-  grade: 20,
-  speed: 5,
-  basis: 'belt',
-  mass: 70,
-  target: 1000,
+const DEFAULTS: AscentParams = {
+  gradePercent: 20,
+  speedKmh: 5,
+  speedBasis: 'belt',
+  massKg: 70,
+  targetGainM: 1000,
 }
 
 export function App() {
-  const [ctrl, setCtrl] = useState<ControlState>(INITIAL)
+  const { params, patch, rejected } = useShareableParams(DEFAULTS)
 
-  const result = useMemo(
-    () =>
-      computeAscent({
-        gradePercent: percent(ctrl.grade),
-        speedKmh: kmh(ctrl.speed),
-        speedBasis: ctrl.basis,
-        massKg: kg(ctrl.mass),
-        targetGainM: meters(ctrl.target),
-      }),
-    [ctrl],
-  )
+  const result = useMemo(() => computeAscent(toAscentInput(params)), [params])
 
   const { elapsedSec, running, rate, setRate, toggle, reset } = useClimb(result.durationSec)
-  const progress = Math.min(1, (elapsedSec * result.vamMh) / 3600 / ctrl.target)
+  const progress = Math.min(1, (elapsedSec * result.vamMh) / 3600 / params.targetGainM)
 
   return (
     <div className="vk">
@@ -48,10 +42,12 @@ export function App() {
       </p>
       <div className="rule" />
 
-      <Controls value={ctrl} onChange={(patch) => setCtrl((c) => ({ ...c, ...patch }))} />
+      <RejectedParams rejected={rejected} />
+
+      <Controls value={params} onChange={patch} />
 
       <div className="stage">
-        <Profile result={result} targetGainM={ctrl.target} progress={progress} />
+        <Profile result={result} targetGainM={params.targetGainM} progress={progress} />
         <div>
           <div className="bigblk">
             <div className="bigcap">소요 시간</div>
@@ -65,8 +61,8 @@ export function App() {
             </div>
           </div>
           <p className="basis">
-            표시 속도 {num(ctrl.speed, 1)} km/h를 <b>{BASIS_LABEL[result.speedBasis]} 거리</b> 기준으로
-            읽음
+            표시 속도 {num(params.speedKmh, 1)} km/h를 <b>{BASIS_LABEL[result.speedBasis]} 거리</b>{' '}
+            기준으로 읽음
             <br />
             벨트 {num(result.beltSpeedKmh, 2)} · 수평 {num(result.horizontalSpeedKmh, 2)} km/h
           </p>
@@ -77,23 +73,19 @@ export function App() {
         running={running}
         rate={rate}
         elapsedSec={elapsedSec}
-        gainM={progress * ctrl.target}
+        gainM={progress * params.targetGainM}
         kcal={progress * result.kcal}
         onToggle={toggle}
         onReset={reset}
         onRate={setRate}
+        share={<ShareLink />}
       />
 
       <Metrics result={result} />
       <Warnings warnings={result.warnings} />
 
-      <ComparisonTable
-        grade={ctrl.grade}
-        speed={ctrl.speed}
-        basis={ctrl.basis}
-        mass={ctrl.mass}
-        target={ctrl.target}
-      />
+      <ComparisonTable params={params} />
+      <ModelComparison result={result} />
 
       <Notes />
     </div>
