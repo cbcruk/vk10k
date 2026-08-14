@@ -7,8 +7,9 @@
 
 import { computeGeometry, type SpeedBasis } from './geometry.js'
 import { computeMetabolic, type Gait, type Warning } from './metabolic.js'
+import { computeMinetti, type MinettiEstimate } from './minetti.js'
 import { computePower } from './power.js'
-import type { Kg, Kmh, Meters, Percent } from './units.js'
+import { kg, kmh, meters, percent, type Kg, type Kmh, type Meters, type Percent } from './units.js'
 
 export interface AscentInput {
   /** 1 ~ 45 */
@@ -17,6 +18,29 @@ export interface AscentInput {
   speedBasis: SpeedBasis
   massKg: Kg
   targetGainM: Meters
+}
+
+/**
+ * `AscentInput`의 날 숫자 쌍둥이. UI 상태, URL 쿼리, FIT 파싱 결과처럼
+ * 브랜디드 타입을 아직 통과하지 않은 값이 사는 곳이다.
+ */
+export interface AscentParams {
+  gradePercent: number
+  speedKmh: number
+  speedBasis: SpeedBasis
+  massKg: number
+  targetGainM: number
+}
+
+/** 날 숫자에 브랜드를 붙인다. 도메인 밖이면 `DomainError`. */
+export function toAscentInput(params: AscentParams): AscentInput {
+  return {
+    gradePercent: percent(params.gradePercent),
+    speedKmh: kmh(params.speedKmh),
+    speedBasis: params.speedBasis,
+    massKg: kg(params.massKg),
+    targetGainM: meters(params.targetGainM),
+  }
 }
 
 export interface AscentResult {
@@ -39,6 +63,11 @@ export interface AscentResult {
   gait: Gait
   /** 어느 컨벤션으로 읽었는지 결과에 항상 붙인다. */
   speedBasis: SpeedBasis
+  /**
+   * 같은 입력을 Minetti et al. (2002) 실측 기준선으로 다시 푼 값.
+   * 위 필드들이 ACSM 추정이고 이건 대조군이다. 벌어지는 폭이 곧 불확실성이다.
+   */
+  minetti: MinettiEstimate
   /** 빈 배열이 아니면 UI가 반드시 노출한다. */
   warnings: Warning[]
 }
@@ -58,6 +87,13 @@ export function computeAscent(input: AscentInput): AscentResult {
     geo.durationSec,
   )
   const pow = computePower(geo.vamMh, met.vo2, input.massKg)
+  const minetti = computeMinetti(
+    geo.grade,
+    geo.beltSpeedKmh,
+    input.massKg,
+    geo.durationSec,
+    met.gait,
+  )
 
   return {
     angleDeg: geo.angleDeg,
@@ -75,6 +111,7 @@ export function computeAscent(input: AscentInput): AscentResult {
     efficiency: pow.efficiency,
     gait: met.gait,
     speedBasis: input.speedBasis,
+    minetti,
     warnings: met.warnings,
   }
 }
