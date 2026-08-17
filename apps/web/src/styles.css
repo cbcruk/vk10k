@@ -30,11 +30,6 @@ body {
   padding: clamp(18px, 4vw, 40px);
   border-radius: 2px;
   font-variant-numeric: tabular-nums;
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent 0 39px,
-    rgba(186, 197, 180, 0.35) 39px 40px
-  );
   max-width: 1120px;
   margin: 0 auto;
   min-height: 100vh;
