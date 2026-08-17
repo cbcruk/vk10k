@@ -530,3 +530,96 @@ button.mini:disabled {
 .solver .chips {
   margin-top: 0;
 }
+
+/* ─── 큐시트 ─────────────────────────────────────────────────────────────── */
+
+.cueactions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.cuehint {
+  font-size: 0.76rem;
+  color: var(--ink2);
+}
+
+/* 한 줄을 왼쪽에서 오른쪽으로 훑는 표다. 폭을 꽉 채우면 시각과 값 사이가 벌어져
+   눈이 건너뛴다. 내용 폭으로 좁히고 열 간격만 준다. */
+.vk table.cuetable {
+  width: auto;
+  min-width: min(100%, 460px);
+}
+.cuetable th,
+.cuetable td {
+  padding-right: 30px;
+}
+.cuetable th:last-child,
+.cuetable td:last-child {
+  padding-right: 0;
+}
+.cuetable td {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+/* 시각은 훑어 내려가며 찾는 열이라 본문보다 크고 왼쪽에 붙인다. */
+.cuetable .cueat {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+/* 손이 가는 값만 강조한다. 안 변한 값은 그대로 두라는 뜻이다. */
+.cuetable .chg {
+  color: var(--teal-d);
+  font-weight: 700;
+}
+.cuetable .cueend td {
+  border-bottom: 0;
+  color: var(--ink2);
+  border-top: 1px solid var(--ink);
+}
+.cuetable .cueend td:nth-child(2) {
+  text-align: left;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+}
+
+.cueprint {
+  display: none;
+}
+
+@media print {
+  /* 큐시트만 남긴다. visibility로 감추면 자리는 그대로 남아 뒤에 빈 페이지가
+     쏟아지므로 display로 지운다 — .cuesheet가 .vk의 직계 자식이라 가능하다. */
+  .vk > *:not(.cuesheet) {
+    display: none;
+  }
+  .vk {
+    max-width: none;
+    min-height: 0;
+    padding: 0 4mm;
+    background: none;
+  }
+  body {
+    background: none;
+  }
+  .noprint {
+    display: none !important;
+  }
+  .cueprint {
+    display: block;
+    margin: 0 0 14px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink2);
+  }
+  /* 흑백 출력에서 색은 사라진다. 변한 값은 굵기와 화살표로만 구분한다. */
+  .cuetable .chg {
+    color: inherit;
+  }
+  .cuetable tr {
+    break-inside: avoid;
+  }
+}

@@ -5,6 +5,7 @@ export {
   type AscentParams,
   type AscentResult,
 } from './ascent.js'
+export { buildCueSheet, type CueEntry, type CueSheet } from './cuesheet.js'
 export {
   beltRatio,
   computeGeometry,

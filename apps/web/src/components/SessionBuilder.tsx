@@ -1,6 +1,7 @@
 import { computeSession, type SessionPlan, type SessionResult } from '@vk10k/core'
 import { useMemo } from 'react'
 import { duration, num } from '../format.js'
+import { CueSheet } from './CueSheet.js'
 import { GainSolver } from './GainSolver.js'
 import { PlanEditor } from './PlanEditor.js'
 
@@ -123,6 +124,8 @@ export function SessionBuilder({ plan, onChange }: Props) {
           </ul>
         </div>
       )}
+
+      <CueSheet result={result} speedBasis={plan.speedBasis} />
 
       <section className="section">
         <h2>

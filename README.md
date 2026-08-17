@@ -142,12 +142,13 @@ vk10k/
 │  ├─ src/power.ts         # P_mech / P_met / η
 │  ├─ src/serialize.ts     # URL 인코딩/디코딩
 │  ├─ src/session.ts       # 인터벌 세션 누적 · VK 목표 역산
+│  ├─ src/cuesheet.ts      # 세션 → 절대 시각 큐시트
 │  ├─ src/ascent.ts        # computeAscent — 코어 진입점
-│  └─ test/                # golden / minetti / serialize / session
+│  └─ test/                # golden / minetti / serialize / session / cuesheet
 ├─ apps/web/               # Vite + React + TS. 계산기 / 세션 빌더 두 탭
 │  └─ src/components/      # Controls / Profile / Metrics / Warnings /
 │                          # ComparisonTable / ModelComparison / ShareLink /
-│                          # SessionBuilder / PlanEditor / GainSolver
+│                          # SessionBuilder / PlanEditor / GainSolver / CueSheet
 └─ docs/model.md           # 수식 정본
 ```
 
@@ -212,6 +213,21 @@ export function solveRepeatsForGain(
 ): GainSolution
 ```
 
+큐시트는 그 결과를 트레드밀 앞에서 읽는 순서로 한 번 더 뒤집는다.
+
+```ts
+// 구간 길이 → 절대 시각(T+), 그리고 설정이 같은 연속 구간은 하나로 합친다.
+export function buildCueSheet(result: SessionResult): CueSheet
+```
+
+구간 전개표는 구간 중심이라 "이 구간 3분"을 말한다. 그런데 계기판에 찍히는 건 경과 시간
+하나뿐이라, 필요한 정보는 "지금 몇 분이니 뭘 눌러야 하나"다. 그 변환을 사람 머리에 맡기지
+않는다. 큐가 서는 곳은 구간의 **시작**이고(누계는 끝 시각이라 조작 시점이 아니다), 경사·속도가
+그대로인 연속 구간은 합친다 — 조작할 게 없는 큐가 섞이면 오히려 진짜 큐를 놓친다.
+
+큐시트에 싣는 건 조작 변수(시각·경사·속도)와 상승고도까지다. 열량과 MET은 VK 영역에서 전부
+외삽이라(위 [알려진 결함](#알려진-결함)) 나란히 크게 박으면 "따라야 할 목표"로 읽힌다. 세션 요약에만 둔다.
+
 경고를 예외가 아니라 **결과의 일부**로 둔다. 계산은 항상 성공하고, 신뢰도만 데이터로 딸려 나온다.
 도메인 밖 입력만 예외다 — `percent()` / `kmh()` / `kg()` / `meters()` 생성자가 `DomainError`로 막는다.
 
@@ -273,6 +289,10 @@ ACSM 외삽을 개인 실측으로 보정한다. 주의: **트레드밀 세션�
 **v0.3 — 세션 빌더** ✅
 경사 인터벌 프로그램(예: 15% 5분 / 25% 3분 × N)을 짜면 총 상승고도·시간·부하를 누적 계산. VK 목표 역산.
 계산기가 "목표 고도 → 시간"이라면 세션은 "시간 → 고도"로 반대 방향이다. 플랜도 URL에 실린다.
+
+**v0.3.1 — 큐시트** ✅
+짠 세션을 절대 시각(T+) 기준으로 뒤집어 트레드밀 앞에서 시간 계산 없이 따라갈 수 있게 한다.
+평문 복사와 인쇄(큐시트만 남기는 print 스타일)를 붙였다.
 
 ## 참고
 
