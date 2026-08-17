@@ -46,6 +46,16 @@ function Field({
   )
 }
 
+/** 반복 1회짜리 양 끝 블록은 관례상 워밍업·쿨다운이다. 이름을 붙여야 눈이 본편을 찾는다. */
+function blockLabel(index: number, blocks: SessionBlock[]): string {
+  const block = blocks[index]
+  if (block?.repeat === 1 && blocks.length > 1) {
+    if (index === 0) return '워밍업'
+    if (index === blocks.length - 1) return '쿨다운'
+  }
+  return `블록 ${index + 1}`
+}
+
 export function PlanEditor({ plan, onChange }: Props) {
   const setBlock = (index: number, block: SessionBlock) =>
     onChange({ ...plan, blocks: replaceAt(plan.blocks, index, block) })
@@ -67,8 +77,7 @@ export function PlanEditor({ plan, onChange }: Props) {
                 onChange={(repeat) => setBlock(blockIndex, { ...block, repeat })}
               />
               <span className="eyebrow">
-                {blockIndex === 0 && block.repeat === 1 ? '워밍업' : `블록 ${blockIndex + 1}`} ·{' '}
-                {num(blockSec / 60, 1)} 분
+                {blockLabel(blockIndex, plan.blocks)} · {num(blockSec / 60, 1)} 분
               </span>
               <button
                 type="button"

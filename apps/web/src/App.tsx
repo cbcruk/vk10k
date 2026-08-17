@@ -28,19 +28,29 @@ const DEFAULT_PARAMS: AscentParams = {
   targetGainM: 1000,
 }
 
-/** 15% 5분 / 25% 3분 × 6 — README가 예로 든 세션. */
+/**
+ * 20% 3분 / 8% 2분 × 6, 워밍업·쿨다운 포함 — 43분 380 m.
+ *
+ * 최고 경사를 20%로 잡은 건 ISF VK 규정의 평균 경사이면서 ACSM 검증범위(15%) 밖이라
+ * 첫 화면에서 `GRADE_EXTRAPOLATED`가 뜨기 때문이다. 그 경고가 이 앱의 요지다.
+ *
+ * 회복 구간은 8%다. 이전 기본값은 회복 자리에 15%를 뒀는데 그건 그 자체로 MET 9.8이라
+ * 쉬는 구간이 아니었고, 결과적으로 48분을 MET 9.8 아래로 내려가지 않고 버티는 세션이었다.
+ * 기본값은 시연이지 도전 과제가 아니다. VK 1,000 m는 목표 역산으로 늘리면 된다.
+ */
 const DEFAULT_PLAN: SessionPlan = {
   speedBasis: 'belt',
   massKg: 70,
   blocks: [
-    { repeat: 1, steps: [{ gradePercent: 3, speedKmh: 4.5, durationSec: 600 }] },
+    { repeat: 1, steps: [{ gradePercent: 5, speedKmh: 5, durationSec: 480 }] },
     {
       repeat: 6,
       steps: [
-        { gradePercent: 15, speedKmh: 5, durationSec: 300 },
-        { gradePercent: 25, speedKmh: 5, durationSec: 180 },
+        { gradePercent: 20, speedKmh: 4.5, durationSec: 180 },
+        { gradePercent: 8, speedKmh: 4.5, durationSec: 120 },
       ],
     },
+    { repeat: 1, steps: [{ gradePercent: 3, speedKmh: 4, durationSec: 300 }] },
   ],
 }
 

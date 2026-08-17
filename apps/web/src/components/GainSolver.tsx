@@ -1,4 +1,4 @@
-import { solveRepeatsForGain, type SessionPlan } from '@vk10k/core'
+import { computeSession, solveRepeatsForGain, type SessionPlan } from '@vk10k/core'
 import { useState } from 'react'
 import { duration, num } from '../format.js'
 
@@ -13,10 +13,36 @@ interface Props {
   onApply: (plan: SessionPlan) => void
 }
 
+/**
+ * 늘릴 블록의 기본값 — 한 바퀴에 가장 많이 오르는 블록이 본편이다.
+ *
+ * "마지막 블록"으로 잡으면 쿨다운이 붙은 순간 3% 5분짜리를 64바퀴 돌라는 답이 나온다.
+ * 반복 횟수에 비례해 목표를 밀어올리는 양이 곧 그 블록이 본편인지를 말해준다.
+ */
+function mainBlockIndex(plan: SessionPlan): number {
+  let best = 0
+  let bestGain = -1
+
+  for (const [index, block] of plan.blocks.entries()) {
+    let gainM: number
+    try {
+      gainM = computeSession({ ...plan, blocks: [{ repeat: 1, steps: block.steps }] }).totals.gainM
+    } catch {
+      continue
+    }
+    if (gainM > bestGain) {
+      bestGain = gainM
+      best = index
+    }
+  }
+
+  return best
+}
+
 /** VK 목표 역산 — 지정한 블록을 몇 바퀴 돌아야 목표 고도에 닿는지. */
 export function GainSolver({ plan, onApply }: Props) {
   const [targetGainM, setTargetGainM] = useState(1000)
-  const [blockIndex, setBlockIndex] = useState(plan.blocks.length - 1)
+  const [blockIndex, setBlockIndex] = useState(() => mainBlockIndex(plan))
 
   const index = Math.min(blockIndex, plan.blocks.length - 1)
   let solution
