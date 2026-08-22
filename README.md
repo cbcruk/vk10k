@@ -146,9 +146,11 @@ vk10k/
 │  ├─ src/ascent.ts        # computeAscent — 코어 진입점
 │  └─ test/                # golden / minetti / serialize / session / cuesheet
 ├─ apps/web/               # Vite + React + TS. 계산기 / 세션 빌더 두 탭
+│  ├─ src/session-presets.ts # 장비 프리셋 — 6|9|12 퀵버튼 세션
 │  └─ src/components/      # Controls / Profile / Metrics / Warnings /
 │                          # ComparisonTable / ModelComparison / ShareLink /
-│                          # SessionBuilder / PlanEditor / GainSolver / CueSheet
+│                          # SessionBuilder / PlanEditor / PlanPresets /
+│                          # GainSolver / CueSheet
 └─ docs/model.md           # 수식 정본
 ```
 
@@ -289,6 +291,12 @@ ACSM 외삽을 개인 실측으로 보정한다. 주의: **트레드밀 세션�
 **v0.3 — 세션 빌더** ✅
 경사 인터벌 프로그램(예: 15% 5분 / 25% 3분 × N)을 짜면 총 상승고도·시간·부하를 누적 계산. VK 목표 역산.
 계산기가 "목표 고도 → 시간"이라면 세션은 "시간 → 고도"로 반대 방향이다. 플랜도 URL에 실린다.
+
+**v0.3.2 — 모드 전환** ✅
+경사·속도 퀵버튼이 6/9/12뿐인 트레드밀을 전제로 두 세션을 프리셋으로 싣는다.
+인터벌(심폐)과 지구력(등반 특이성)은 하나로 합쳐지지 않아 모드로 가른다.
+12%가 보행식·주행식 교차점(11.1%) 바로 위라 `GAIT_BOUNDARY`가 뜨는 지점에서
+오히려 두 식의 간극이 2.4%로 가장 좁다.
 
 **v0.3.1 — 큐시트** ✅
 짠 세션을 절대 시각(T+) 기준으로 뒤집어 트레드밀 앞에서 시간 계산 없이 따라갈 수 있게 한다.

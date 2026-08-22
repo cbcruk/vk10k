@@ -531,6 +531,21 @@ button.mini:disabled {
   margin-top: 0;
 }
 
+.presets {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.presets .chips {
+  margin-top: 0;
+}
+.presethint {
+  font-size: 0.76rem;
+  color: var(--ink2);
+}
+
 /* ─── 큐시트 ─────────────────────────────────────────────────────────────── */
 
 .cueactions {

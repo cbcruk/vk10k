@@ -4,6 +4,7 @@ import { duration, num } from '../format.js'
 import { CueSheet } from './CueSheet.js'
 import { GainSolver } from './GainSolver.js'
 import { PlanEditor } from './PlanEditor.js'
+import { PlanPresets } from './PlanPresets.js'
 
 interface Props {
   plan: SessionPlan
@@ -48,6 +49,7 @@ export function SessionBuilder({ plan, onChange }: Props) {
         <h2>
           세션 구성 <span className="cap">— 블록 = 스텝의 나열 × 반복</span>
         </h2>
+        <PlanPresets plan={plan} onChange={onChange} />
         <PlanEditor plan={plan} onChange={onChange} />
       </section>
 

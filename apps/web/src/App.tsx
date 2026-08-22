@@ -19,6 +19,7 @@ import { Warnings } from './components/Warnings.js'
 import { BASIS_LABEL, duration, num } from './format.js'
 import { useClimb } from './hooks/useClimb.js'
 import { useShareableState } from './hooks/useShareableState.js'
+import { SESSION_PRESETS } from './session-presets.js'
 
 const DEFAULT_PARAMS: AscentParams = {
   gradePercent: 20,
@@ -28,41 +29,11 @@ const DEFAULT_PARAMS: AscentParams = {
   targetGainM: 1000,
 }
 
-/**
- * 6|9|12 퀵버튼만으로 짠 인터벌 — 45분 478 m.
- *
- * 흔한 트레드밀은 경사·속도 퀵버튼이 6/9/12 세 개뿐이고, 그 밖의 값은 +/- 로
- * 눌러 맞춰야 한다. 기본값이 한 탭으로 닿지 않는 값을 요구하면 첫 세션부터
- * 손이 바쁘다. 그래서 아홉 칸(경사 3 × 속도 3) 안에서만 짰다.
- *
- * 최고 경사가 12%라 `GRADE_EXTRAPOLATED`는 뜨지 않고 대신 `GAIT_BOUNDARY`가
- * 뜬다(6 km/h 구간). 12%는 보행식·주행식 교차점 G = 1/9 ≈ 11.1% 바로 위라
- * 두 식의 간극이 2.4%뿐이다 — 경고는 뜨지만 그 지점에서만은 거의 무해하다는
- * 게 오히려 볼거리다. 6% 구간에서는 같은 간극이 16%로 벌어진다.
- *
- * 회복은 9%다. 12%로 회복하면 MET 10.0이라 쉬는 구간이 되지 않는다.
- * 9% · 6 km/h는 MET 8.5(워크 구간의 60%)면서 VAM 538 — 회복 중에도 오른다.
- */
+/** 기본은 인터벌 모드. 나머지 모드는 세션 빌더에서 전환한다. */
 const DEFAULT_PLAN: SessionPlan = {
   speedBasis: 'belt',
   massKg: 65,
-  blocks: [
-    {
-      repeat: 1,
-      steps: [
-        { gradePercent: 6, speedKmh: 6, durationSec: 360 },
-        { gradePercent: 9, speedKmh: 6, durationSec: 240 },
-      ],
-    },
-    {
-      repeat: 6,
-      steps: [
-        { gradePercent: 12, speedKmh: 9, durationSec: 120 },
-        { gradePercent: 9, speedKmh: 6, durationSec: 180 },
-      ],
-    },
-    { repeat: 1, steps: [{ gradePercent: 6, speedKmh: 6, durationSec: 300 }] },
-  ],
+  blocks: structuredClone(SESSION_PRESETS[0]!.blocks),
 }
 
 function Calculator({
