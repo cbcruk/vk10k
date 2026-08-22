@@ -14,16 +14,21 @@ interface Props {
 }
 
 /**
- * 늘릴 블록의 기본값 — 한 바퀴에 가장 많이 오르는 블록이 본편이다.
+ * 늘릴 블록의 기본값 — 이미 반복하도록 적힌 블록이 본편이다.
  *
  * "마지막 블록"으로 잡으면 쿨다운이 붙은 순간 3% 5분짜리를 64바퀴 돌라는 답이 나온다.
- * 반복 횟수에 비례해 목표를 밀어올리는 양이 곧 그 블록이 본편인지를 말해준다.
+ * 그렇다고 "한 바퀴에 가장 많이 오르는 블록"으로 잡으면 워밍업이 길 때 그쪽으로 샌다
+ * (10분 워밍업 71.8 m vs 인터벌 한 바퀴 62.6 m). 반복 횟수는 작성자가 "이게 본편이다"
+ * 라고 남긴 신호라 그걸 먼저 보고, 반복이 전부 1회일 때만 상승량으로 가른다.
  */
 function mainBlockIndex(plan: SessionPlan): number {
-  let best = 0
+  const repeated = plan.blocks.filter((block) => block.repeat > 1)
+  const pool = repeated.length > 0 ? repeated : plan.blocks
+
+  let best = plan.blocks.indexOf(pool[0] ?? plan.blocks[0]!)
   let bestGain = -1
 
-  for (const [index, block] of plan.blocks.entries()) {
+  for (const block of pool) {
     let gainM: number
     try {
       gainM = computeSession({ ...plan, blocks: [{ repeat: 1, steps: block.steps }] }).totals.gainM
@@ -32,7 +37,7 @@ function mainBlockIndex(plan: SessionPlan): number {
     }
     if (gainM > bestGain) {
       bestGain = gainM
-      best = index
+      best = plan.blocks.indexOf(block)
     }
   }
 
