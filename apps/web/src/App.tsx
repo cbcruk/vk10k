@@ -15,7 +15,7 @@ import { RejectedParams } from './components/RejectedParams.js'
 import { SessionBuilder } from './components/SessionBuilder.js'
 import { ShareLink } from './components/ShareLink.js'
 import { Transport } from './components/Transport.js'
-import { Warnings } from './components/Warnings.js'
+import { WarningBadges, Warnings } from './components/Warnings.js'
 import { BASIS_LABEL, duration, num } from './format.js'
 import { useClimb } from './hooks/useClimb.js'
 import { useShareableState } from './hooks/useShareableState.js'
@@ -53,18 +53,21 @@ function Calculator({
 
       <div className="stage">
         <Profile result={result} targetGainM={params.targetGainM} progress={progress} />
-        <div>
-          <div className="bigblk">
-            <div className="bigcap">소요 시간</div>
-            <div className="big">{duration(result.durationSec)}</div>
-          </div>
-          <div className="bigblk">
-            <div className="bigcap">수직 상승 속도 (VAM)</div>
-            <div className="big">
-              {num(result.vamMh, 0)}
-              <span>m/h</span>
+        <div className="results">
+          <div className="bigs">
+            <div className="bigblk">
+              <div className="bigcap">소요 시간</div>
+              <div className="big">{duration(result.durationSec)}</div>
+            </div>
+            <div className="bigblk">
+              <div className="bigcap">수직 상승 속도 (VAM)</div>
+              <div className="big">
+                {num(result.vamMh, 0)}
+                <span>m/h</span>
+              </div>
             </div>
           </div>
+          <WarningBadges warnings={result.warnings} />
           <p className="basis">
             표시 속도 {num(params.speedKmh, 1)} km/h를 <b>{BASIS_LABEL[result.speedBasis]} 거리</b>{' '}
             기준으로 읽음
@@ -103,23 +106,45 @@ export function App() {
 
   return (
     <div className="vk">
-      <div className="eyebrow">Vertical Kilometer · Treadmill Simulator</div>
-      <h1>
-        VK<em>10K</em>
-      </h1>
-      <p className="lede">
-        경사와 속도를 정하면 목표 고도를 쌓는 데 걸리는 시간, 실제로 밟아야 하는 거리, 그리고 대사
-        부하를 계산합니다. 추정이 어디서부터 못 믿을 값이 되는지도 같이 표시합니다.
-      </p>
-
-      <div className="seg tabs" role="tablist" aria-label="화면">
-        <button type="button" role="tab" aria-selected={tab === 'calculator'} aria-pressed={tab === 'calculator'} onClick={() => setTab('calculator')}>
-          계산기
-        </button>
-        <button type="button" role="tab" aria-selected={tab === 'session'} aria-pressed={tab === 'session'} onClick={() => setTab('session')}>
-          세션 빌더
-        </button>
-      </div>
+      <header className="vkhead">
+        <div className="eyebrow">Vertical Kilometer · Treadmill Simulator</div>
+        <div className="vkhead-top">
+          <h1>
+            VK<em>10K</em>
+          </h1>
+          <div className="seg tabs" role="tablist" aria-label="화면">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'calculator'}
+              aria-pressed={tab === 'calculator'}
+              onClick={() => setTab('calculator')}
+            >
+              계산기
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'session'}
+              aria-pressed={tab === 'session'}
+              onClick={() => setTab('session')}
+            >
+              세션 빌더
+            </button>
+          </div>
+        </div>
+        {/* 좁은 화면에서는 리드가 넉 줄이라 결과를 밀어낸다. 같은 말을 한 줄로 줄이고
+            뒷문장은 각주로 넘긴다. */}
+        <p className="lede">
+          <span className="lede-full">
+            경사와 속도를 정하면 목표 고도를 쌓는 데 걸리는 시간, 실제로 밟아야 하는 거리, 그리고
+            대사 부하를 계산합니다. 추정이 어디서부터 못 믿을 값이 되는지도 같이 표시합니다.
+          </span>
+          <span className="lede-short">
+            경사·속도로 상승 시간과 거리, 대사 부하를 계산합니다. <a href="#notes">추정의 한계</a>
+          </span>
+        </p>
+      </header>
 
       <div className="rule" />
 

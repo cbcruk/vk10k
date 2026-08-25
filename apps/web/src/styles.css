@@ -164,10 +164,14 @@ body {
     grid-template-columns: 1fr;
   }
 }
-.vk svg {
+/* 단면도만 폭을 꽉 채운다. 버튼 안의 아이콘까지 늘어나면 안 된다. */
+.stage > svg {
   width: 100%;
   height: auto;
   display: block;
+}
+.vk button svg {
+  flex: none;
 }
 
 .big {
@@ -636,5 +640,425 @@ button.mini:disabled {
   }
   .cuetable tr {
     break-inside: avoid;
+  }
+}
+
+/* ─── 헤더 ──────────────────────────────────────────────────────────────── */
+
+.vkhead {
+  display: flex;
+  flex-direction: column;
+}
+.vkhead-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tabs {
+  margin: 0;
+}
+.lede {
+  margin: 8px 0 26px;
+}
+.lede-short {
+  display: none;
+}
+
+/* ─── 슬라이더 눈금 ─────────────────────────────────────────────────────── */
+
+/* 트랙 아래에 긋는다. 손잡이 위로 얹으면 눈금이 잘려 보인다. */
+.track {
+  position: relative;
+  margin: 9px 0 0;
+  padding-bottom: 7px;
+}
+.track input[type='range'] {
+  margin: 0;
+  display: block;
+}
+.markzone,
+.marktick {
+  position: absolute;
+  bottom: 0;
+  pointer-events: none;
+}
+.markzone {
+  left: var(--mark);
+  right: 0;
+  height: 2px;
+  background: rgba(156, 59, 34, 0.4);
+}
+.marktick {
+  left: var(--mark);
+  width: 1px;
+  height: 6px;
+  background: var(--ink2);
+}
+.trackhint {
+  margin: 5px 0 0;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: var(--ink2);
+}
+.trackhint.caution {
+  color: var(--warn);
+}
+
+/* ─── 입력 요약 바 (좁은 화면 전용) ─────────────────────────────────────── */
+
+.inputbar {
+  display: none;
+}
+
+/* ─── 지표 그룹 ─────────────────────────────────────────────────────────── */
+
+.metricswrap {
+  margin: 0 0 30px;
+}
+.metrics {
+  margin-bottom: 0;
+}
+.mgroup + .mgroup {
+  margin-top: 14px;
+}
+.grp {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin-bottom: 5px;
+}
+.m[data-soft='true'] dd,
+.m[data-soft='true'] dd small {
+  color: var(--warn);
+}
+.mkey,
+.moretoggle,
+.wbadges,
+.heredetail {
+  display: none;
+}
+
+/* ─── 각주 ──────────────────────────────────────────────────────────────── */
+
+.notes details {
+  border-bottom: 1px solid rgba(186, 197, 180, 0.6);
+}
+.notes details:first-of-type {
+  border-top: 1px solid var(--ink);
+}
+.notes summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.86rem;
+  list-style: none;
+}
+.notes summary::-webkit-details-marker {
+  display: none;
+}
+.notes summary::after {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--ink2);
+  border-bottom: 1.5px solid var(--ink2);
+  transform: translateY(-2px) rotate(45deg);
+}
+.notes details[open] summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+.notes summary:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.notes details p {
+  margin: 0;
+  padding: 0 0 14px;
+}
+
+/* ─── 좁은 화면: 답을 먼저, 근거는 뒤로 ─────────────────────────────────── */
+
+@media (max-width: 680px) {
+  .vk {
+    padding-bottom: 96px;
+  }
+  .vk h1 {
+    font-size: 1.7rem;
+    margin: 0;
+  }
+  .lede-full {
+    display: none;
+  }
+  .lede-short {
+    display: inline;
+  }
+  .lede {
+    margin: 10px 0 0;
+    font-size: 0.86rem;
+  }
+  .lede-short a {
+    white-space: nowrap;
+  }
+  .eyebrow {
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+  }
+  .rule {
+    margin: 16px 0 0;
+  }
+
+  .inputbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 18px 0 0;
+    padding: 9px 11px;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .inputbar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px 8px;
+    flex-grow: 1;
+  }
+  .ib-k {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink2);
+  }
+  .ib-v {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .ib-v i {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 0.6rem;
+    color: var(--ink2);
+    margin-left: 2px;
+  }
+  /* 펼친 패널이 길수록 결과가 화면 밖으로 밀린다. 간격과 글자를 조인다. */
+  .ctrls {
+    margin: 18px 0 0;
+    gap: 14px;
+  }
+  .ctrl label {
+    font-size: 0.62rem;
+  }
+  .ctrl output {
+    font-size: 0.92rem;
+  }
+  .chips {
+    margin-top: 7px;
+  }
+  .chips button {
+    font-size: 0.62rem;
+    padding: 4px 8px;
+  }
+  .seg button {
+    padding: 5px 10px;
+    font-size: 0.62rem;
+  }
+  .markzone {
+    height: 3px;
+  }
+  .ctrls[data-collapsed='true'] {
+    display: none;
+  }
+
+  /* 답이 먼저 오고 단면도가 뒤따른다. */
+  .stage {
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .results {
+    order: 1;
+  }
+  .stage > svg {
+    order: 2;
+  }
+  .bigs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+  }
+  .bigs .bigblk {
+    margin: 0;
+    padding: 13px 12px 14px 0;
+    border-top: 0;
+  }
+  .bigs .bigblk + .bigblk {
+    margin: 0;
+    padding: 13px 0 14px 12px;
+    border-top: 0;
+    border-left: 1px solid var(--rule);
+  }
+  .bigcap {
+    letter-spacing: 0.14em;
+  }
+
+  .wbadges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 11px;
+  }
+  .wbadge {
+    font-family: var(--mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    padding: 3px 7px;
+    border: 1px solid var(--rule);
+    color: var(--ink2);
+  }
+  .wbadge.caution {
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+
+  .metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .m {
+    padding: 10px 9px 11px;
+  }
+  .m dt {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+  }
+  .m dd {
+    font-size: 1.05rem;
+  }
+  .mkey {
+    display: grid;
+  }
+  .mgroups {
+    margin-top: 14px;
+  }
+  .mgroups[data-collapsed='true'] {
+    display: none;
+  }
+  .metricswrap[data-open='true'] .mkey {
+    display: none;
+  }
+  .moretoggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink2);
+    cursor: pointer;
+  }
+
+  /* 훑을 때 필요한 건 시간과 부하다. 거리 세 열은 고른 경사에서만 편다. */
+  .vk table {
+    font-size: 0.74rem;
+  }
+  .vk .colwide {
+    display: none;
+  }
+  .vk .heredetail {
+    display: table-row;
+  }
+  .vk .heredetail td {
+    text-align: left;
+    padding: 0 0 9px;
+    background: rgba(14, 107, 117, 0.09);
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.66rem;
+    color: var(--ink2);
+  }
+  .vk .heredetail span + span {
+    margin-left: 14px;
+  }
+  .vk .heredetail b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* 스크롤 내내 바닥에 붙인다. sticky는 요소를 지나치는 순간 풀려서 안 된다 —
+     이 바는 문서 위쪽에 있고 아래로 훑는 동안 계속 필요하다. */
+  .transport {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'readout readout rate'
+      'go reset share';
+    gap: 9px 8px;
+    margin: 0;
+    padding: 11px clamp(18px, 4vw, 40px) calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper);
+    border-top: 1px solid var(--ink);
+  }
+  .transport button {
+    padding: 9px 10px;
+    font-size: 0.66rem;
+    white-space: nowrap;
+  }
+  .transport .rate button {
+    padding: 7px 8px;
+    font-size: 0.62rem;
+  }
+  .tp-readout {
+    grid-area: readout;
+    align-self: center;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+  }
+  .transport .rate {
+    grid-area: rate;
+    margin-left: 0;
+  }
+  .tp-go {
+    grid-area: go;
+  }
+  .tp-reset {
+    grid-area: reset;
+  }
+  .tp-share {
+    grid-area: share;
+    display: flex;
+  }
+  .tp-share button {
+    width: 100%;
+  }
+}
+
+@media print {
+  .vk {
+    padding-bottom: 0;
   }
 }
